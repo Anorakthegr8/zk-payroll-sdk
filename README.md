@@ -495,6 +495,37 @@ used as the signer (`KeypairInstructionSigner` adapts a Stellar `Keypair`),
 so hardware wallets, browser extensions, or KMS-backed signers work the same
 way as backend keypairs.
 
+## SDK / contract revision compatibility warnings
+
+`checkConnectedContractCompatibility()` warns when the connected payroll
+contract's revision falls outside the range this SDK version has been built
+and tested against (`SDK_SUPPORTED_CONTRACT_REVISION_RANGE`). It's a
+read-only, unsigned check — safe to run at startup or before a payroll run —
+and never throws: RPC failures, an invalid contract ID, or a contract that
+doesn't expose a revision method all resolve to `status: "unknown"` with a
+stable code instead of crashing the workflow.
+
+```typescript
+import { checkConnectedContractCompatibility } from "@zk-payroll/core";
+
+const warning = await checkConnectedContractCompatibility({ server, contractId });
+
+if (!warning.compatible) {
+  console.warn(warning.code, warning.message); // safe to log — no payroll values
+}
+```
+
+States: `compatible`, `outdated` (contract revision below the SDK's minimum
+— upgrade the contract or use an older SDK), `ahead` (contract revision
+above the SDK's maximum — upgrade the SDK), and `unknown` (revision could
+not be determined; treat as unverified rather than a hard failure). Only
+integer revision numbers are read from or reported by this check — never
+recipient, amount, or employee data.
+
+Use `checkContractRevisionCompatibility(revision, range?)` directly when you
+already have the revision (e.g. from your own contract read) and just need
+the comparison, without an RPC round-trip.
+
 ## Explicit Operation Result Types
 
 Instead of relying on thrown exceptions alone, `runSdkOperation()` returns an

@@ -181,6 +181,9 @@ export type {
 // ── Signed Payroll Instruction Builder ──────────────────────────────────────
 export * from "./instructions";
 
+// ── SDK / Contract Revision Compatibility ───────────────────────────────────
+export * from "./compatibility";
+
 // ── History Filter Builders ─────────────────────────────────────────────────
 export * from "./filters";
 
