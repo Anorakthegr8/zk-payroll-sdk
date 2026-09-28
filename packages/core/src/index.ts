@@ -178,6 +178,9 @@ export type {
   SubmissionContext,
 } from "./request";
 
+// ── Signed Payroll Instruction Builder ──────────────────────────────────────
+export * from "./instructions";
+
 // ── History Filter Builders ─────────────────────────────────────────────────
 export * from "./filters";
 

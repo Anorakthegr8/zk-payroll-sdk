@@ -454,6 +454,47 @@ reference, and metadata digest — returning an explicit result with a stable
 error code and a sanitized, actionable message that never echoes rejected
 values. The display receipt ID in the result is redacted for safe logging.
 
+## Signed payroll instruction builder
+
+`SignedPayrollInstructionBuilder` composes a payroll request, deterministically
+serializes it (the same encoder used for on-chain command payloads), and
+produces a signed, auditable instruction — independent of transaction
+assembly and submission. It's the right building block when a payroll
+instruction needs to be authorized, persisted, or handed to an approver
+*before* a Soroban transaction exists.
+
+```typescript
+import {
+  SignedPayrollInstructionBuilder,
+  KeypairInstructionSigner,
+  verifySignedPayrollInstruction,
+  describeSignedPayrollInstruction,
+} from "@zk-payroll/core";
+
+const instruction = await new SignedPayrollInstructionBuilder()
+  .add({ recipient: "GABC...", amount: 1000n, asset: "native" })
+  .withContext({ network: "testnet", contractId: "CABC..." })
+  .sign(new KeypairInstructionSigner(employerKeypair));
+
+// Safe to log or display — never contains recipient/amount values.
+console.log(describeSignedPayrollInstruction(instruction));
+
+// Independently verify integrity (unmodified since signing) and authenticity
+// (the signature matches signerPublicKey) before acting on the instruction.
+const check = await verifySignedPayrollInstruction(instruction);
+if (!check.ok) {
+  console.error(check.code, check.message); // safe to log
+}
+```
+
+`sign()` throws a typed `PayrollInstructionError` for empty or invalid
+entries, an unavailable signer, or a signing failure — messages carry only
+stable codes and field/index references, never recipient, amount, or asset
+values. Any object implementing `getPublicKey()` / `signPayload()` can be
+used as the signer (`KeypairInstructionSigner` adapts a Stellar `Keypair`),
+so hardware wallets, browser extensions, or KMS-backed signers work the same
+way as backend keypairs.
+
 ## Explicit Operation Result Types
 
 Instead of relying on thrown exceptions alone, `runSdkOperation()` returns an
