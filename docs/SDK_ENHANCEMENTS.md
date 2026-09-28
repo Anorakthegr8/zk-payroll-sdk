@@ -260,6 +260,62 @@ const direct = await estimator.estimate(unsignedTx);
 const reused = estimatePreparedTransactionFee(prepared.transaction);
 ```
 
+## Issue #524 — Transaction Fee Ceiling Validator
+The transaction fee ceiling validator is implemented in
+`packages/core/src/fee-estimation/feeCeiling.ts` and runs inside the fee
+estimation workflow, before a payroll transaction is signed or submitted.
+
+`validateFeeCeiling(fee, ceiling, options?)` returns an explicit result —
+`{ ok: true, state, fee, ceiling, headroom, utilizationBps, warning }` or
+`{ ok: false, state, code, message }` — and never throws. States are
+`within_ceiling`, `approaching_ceiling`, `exceeds_ceiling`, and `invalid`
+(malformed fee, non-positive ceiling, or an out-of-range `warnBps`).
+
+Stable error codes are exported via `FeeCeilingErrorCode`: missing/invalid/
+negative fee, missing/invalid ceiling, invalid warning band, and
+`TRANSACTION_FEE_EXCEEDS_CEILING`.
+
+Policy options: `warnBps` (default 8000 = warn at 80% of the ceiling, `0`
+disables) and `label` (an operation name such as `private_pay` used in
+messages).
+
+Privacy: results and messages carry fee figures in stroops and the optional
+operation label only — never recipients, payroll amounts, or proofs — so they
+are safe to log and render in dashboards.
+
+Integration: exported from the fee-estimation barrel; the estimation entry
+points (`TransactionFeeEstimator.estimate`, `estimatePreparedTransactionFee`,
+and therefore `PayrollContractWrapper.estimatePrivatePayFee`) accept an
+opt-in `feeCeiling` option that gates the buffered total and throws
+`TransactionFeeCeilingError` when it is exceeded. A malformed ceiling is
+reported as `ValidationError` (`FEE_ESTIMATION_INVALID_CEILING`). Also
+available: `assertFeeWithinCeiling()`, `validateTransactionFeeCeiling()` for
+estimate objects, and `isFeeWithinCeiling()`.
+
+### Usage
+```typescript
+import { validateFeeCeiling } from '@zk-payroll/core/fee-estimation';
+
+// Pre-flight: never throws, safe to log
+const check = validateFeeCeiling(estimate.totalFee, 5_000n, {
+  warnBps: 8_000,
+  label: 'private_pay',
+});
+
+if (!check.ok) {
+  console.error(check.code, check.message); // fee figures only
+} else if (check.state === 'approaching_ceiling') {
+  console.warn(check.warning); // "...at 92% of the configured ceiling..."
+}
+
+// Or gate the estimate itself — fails before signing or broadcasting
+const estimate = await contractWrapper.estimatePrivatePayFee(
+  recipient, amount, asset, proof, sourcePublicKey,
+  undefined,
+  { bufferBps: 1_000, feeCeiling: 5_000n }
+);
+```
+
 ## Issue #519 — Withholding Configuration Validator
 The withholding configuration validator is implemented in
 `packages/core/src/payroll/withholdingConfig.ts` and runs before a withholding

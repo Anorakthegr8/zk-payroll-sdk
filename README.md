@@ -341,6 +341,49 @@ non-Soroban/empty transactions and a `ContractExecutionError` with
 `SIMULATION_FAILED` for rejected simulations — and never echo rejected
 destination, amount, or proof values.
 
+## Transaction fee ceiling
+
+Gate an estimate against an explicit maximum **before** anything is signed or
+submitted. Pass `feeCeiling` (stroops) to any estimation entry point — the
+cap is applied to the total the transaction would actually carry, including
+the safety buffer — or run the validator yourself for a non-throwing
+pre-flight check.
+
+```typescript
+import { validateFeeCeiling, TransactionFeeCeilingError } from "@zk-payroll/core";
+
+// Fail fast when the simulated total (base + resource + buffer) is too expensive:
+const estimate = await contractWrapper.estimatePrivatePayFee(
+  recipient,
+  amount,
+  asset,
+  proof,
+  sourcePublicKey,
+  undefined,
+  { bufferBps: 1_000, feeCeiling: 5_000n } // throws TransactionFeeCeilingError
+);
+
+// Or check without throwing:
+const check = validateFeeCeiling(estimate.totalFee, 5_000n, { warnBps: 8_000 });
+if (!check.ok) {
+  console.error(check.code, check.message); // safe to log
+} else if (check.state === "approaching_ceiling") {
+  console.warn(check.warning); // 80%+ of the ceiling already committed
+}
+```
+
+`validateFeeCeiling()` returns `{ ok: true, state, fee, ceiling, headroom,
+utilizationBps, warning }` or `{ ok: false, state, code, message }`. States
+are `within_ceiling`, `approaching_ceiling` (default ≥ 80% of the ceiling,
+tunable via `warnBps`, `0` disables), `exceeds_ceiling`, and `invalid`
+(malformed fee, non-positive ceiling, or an out-of-range `warnBps`).
+`assertFeeWithinCeiling()` throws a typed `TransactionFeeCeilingError`,
+`validateTransactionFeeCeiling()` applies the same gate to a
+`TransactionFeeEstimate`, and `isFeeWithinCeiling()` is the boolean shortcut.
+Messages carry fee figures and an optional operation label only — never
+recipients, payroll amounts, or proofs — and a malformed `feeCeiling` option
+surfaces as a `ValidationError` (`FEE_ESTIMATION_INVALID_CEILING`).
+
 ## Request identifier propagation
 
 Pass a `requestId` to correlate one payroll operation across transaction
