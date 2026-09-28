@@ -726,8 +726,8 @@ const scheduled = await client.schedule(
 );
 console.log("Payment ID:", scheduled.paymentId);
 
-// Cancel a scheduled payment
-await client.cancel(scheduled.paymentId, signer);
+// Cancel a scheduled payment with an optional reason code
+await client.cancel(scheduled.paymentId, signer, "insufficient_funds");
 
 // Get pending payments
 const payments = await client.getPendingPayments("G...", 0n, 20, signer);

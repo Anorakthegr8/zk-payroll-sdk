@@ -14,6 +14,18 @@ export type {
 export * from "../types";
 
 export {
+  CANCELLATION_REASONS,
+  getCancellationReasonLabel,
+  getCancellationReasonDescription,
+  isSupportedCancellationReason,
+} from "../payroll/cancellation";
+export type {
+  CancellationReasonCode,
+  CancellationReasonInfo,
+} from "../payroll/cancellation";
+
+
+export {
   getContractMetadata,
   isKnownEnvironment,
   listKnownEnvironments,

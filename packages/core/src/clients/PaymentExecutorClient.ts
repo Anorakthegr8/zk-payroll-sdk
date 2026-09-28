@@ -64,8 +64,23 @@ export class PaymentExecutorClient extends BaseContractWrapper {
     return { paymentId: this.scValToBigInt(result) };
   }
 
-  async cancel(paymentId: bigint, signer: Keypair, network?: string): Promise<void> {
+  async cancel(
+    paymentId: bigint,
+    signer: Keypair,
+    reasonCode?: string,
+    network?: string
+  ): Promise<void> {
+    if (reasonCode) {
+      const { isSupportedCancellationReason } = require("../payroll/cancellation");
+      if (!isSupportedCancellationReason(reasonCode)) {
+        throw new Error(`Unsupported cancellation reason: ${reasonCode}`);
+      }
+    }
+
     const args: xdr.ScVal[] = [nativeToScVal(paymentId, { type: "u64" })];
+    if (reasonCode) {
+      args.push(nativeToScVal(reasonCode, { type: "symbol" }));
+    }
     await this.invoke("cancel", args, signer, network ?? this.networkPassphrase);
   }
 
