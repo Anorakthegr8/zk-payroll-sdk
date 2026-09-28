@@ -49,7 +49,7 @@ await service.processPayment(
 
 ## Features
 
-- **Typed Contract Clients**: Fully typed client wrappers for PayrollRegistry, SalaryCommitment, ProofVerifier, PaymentExecutor, and AuditHold contracts.
+- **Typed Contract Clients**: Fully typed client wrappers for PayrollRegistry, SalaryCommitment, ProofVerifier, PaymentExecutor, PreflightClient, and AuditHold contracts.
 - **ZK Proof Generation**: Client-side proof generation using snarkjs for privacy.
 - **Caching**: Built-in caching for proofs and circuit artifacts.
 - **Error Handling**: Robust error typing and management.
@@ -762,6 +762,28 @@ await client.cancel(scheduled.paymentId, signer, "insufficient_funds");
 
 // Get pending payments
 const payments = await client.getPendingPayments("G...", 0n, 20, signer);
+```
+
+### PreflightClient
+
+Expose the contract preflight response as typed, actionable execution blockers. This strengthens a practical payroll workflow while keeping private salary and employee data protected.
+
+```typescript
+import { PreflightClient } from "@zk-payroll/sdk";
+
+const client = new PreflightClient(server, "CCONTRACT_ID...");
+
+// Validate an execution via dry-run simulation
+const result = await client.preflightExecute(
+  { recipient: "G...", amount: 1000n, asset: "native", memo: "salary" },
+  signer.publicKey() // Can check without signing
+);
+
+if (!result.canProceed) {
+  console.error("Dry run failed:", result.findings);
+} else {
+  console.log("Safe to execute!");
+}
 ```
 
 ### AuditHoldClient

@@ -41,3 +41,6 @@ export type {
   MetadataValidationResult,
   MetadataValidationError,
 } from "../metadata";
+
+export { PreflightClient } from "../clients/PreflightClient";
+export type { PreflightResult, PreflightFinding } from "../clients/PreflightClient";
