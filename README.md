@@ -227,8 +227,6 @@ typed `WithholdingConfigError` when a hard gate is needed, and
 `PayrollService.validateWithholdingConfig()` exposes the same check as an
 instance and static helper.
 
-<<<<<<< Updated upstream
-=======
 ## Payroll Recipient Lock Status Reader
 
 Expose whether a payout recipient is locked because of an active payroll execution (`#512`). This strengthens operational workflows by preventing duplicate payouts, race conditions, and double-settlement during in-flight batch execution while keeping private salary and employee data protected.
@@ -321,7 +319,6 @@ if (!inspection.canLock) {
 }
 ```
 
->>>>>>> Stashed changes
 ## Event Stream Deduplication
 
 The SDK provides deduplication helpers to prevent processing the same payroll event more than once. This strengthens payroll workflows while keeping private salary and employee data protected.

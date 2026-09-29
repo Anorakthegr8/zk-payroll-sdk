@@ -61,8 +61,6 @@ import {
   type DestinationWorkflowValidation,
 } from "./settlement/destination";
 import type { DestinationValidationHook } from "./employees/payoutDestination";
-<<<<<<< Updated upstream
-=======
 import {
   fetchRecipientLockStatus as fetchRecipientLockStatusHelper,
   evaluateRecipientLockStatus as evaluateRecipientLockStatusHelper,
@@ -107,7 +105,6 @@ export {
   type ActivePayrollExecution,
   type BatchRecipientLockSummary,
 };
->>>>>>> Stashed changes
 
 export {
   inspectDraftLockHelper as inspectDraftLock,
@@ -687,8 +684,6 @@ export class PayrollService {
   static async validateDestination(value: unknown): Promise<DestinationWorkflowValidation> {
     return validatePaymentDestination(value);
   }
-<<<<<<< Updated upstream
-=======
 
   /**
    * Reads the on-chain lock status for a payout recipient (#512).
@@ -815,5 +810,4 @@ export class PayrollService {
   ): void {
     assertDraftLockableHelper(draft, options);
   }
->>>>>>> Stashed changes
 }

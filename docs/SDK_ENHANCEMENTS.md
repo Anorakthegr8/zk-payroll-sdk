@@ -368,3 +368,33 @@ if (!batch.isValid) {
   console.error(batch.issues); // sanitized, indexed failures
 }
 ```
+
+## Issue #614 — Payroll Note Hash Verification
+
+Note hash *generation* has lived in `packages/core/src/privacy.ts` since the
+first note-hash work (`buildNoteHash`, `attachNoteHash`); issue #614 adds the
+missing *verification* half so integrators can confirm that payroll note text
+they hold locally still matches the hash attached to a contract payload.
+
+`verifyNoteHash()` recomputes the SHA-256 digest of the note text and compares
+it to the expected hash with a constant-time hex comparison
+(`secureCompareHex`), so comparison timing does not reveal where two digests
+first differ. It never throws, never echoes raw note text, and returns a
+structured failure with an actionable code instead:
+
+- `MISSING_NOTE_AND_HASH` — both `note` and `noteHash` are required.
+- `INVALID_EXPECTED_NOTE_HASH` — the expected hash is not a 64-character
+  lowercase hex SHA-256 digest (this is a caller bug, not a mismatch).
+- `NOTE_HASH_MISMATCH` — the note text does not hash to the expected value.
+
+### Usage
+```typescript
+import { verifyNoteHash } from '@zk-payroll/core';
+
+const result = await verifyNoteHash({ note, noteHash: payload.noteHash });
+if (!result.verified) {
+  console.error(result.failure.code, result.failure.message); // safe to log
+}
+```
+
+Tests: `packages/core/tests/note-hash-verification.test.ts`.
