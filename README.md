@@ -227,6 +227,57 @@ typed `WithholdingConfigError` when a hard gate is needed, and
 `PayrollService.validateWithholdingConfig()` exposes the same check as an
 instance and static helper.
 
+## Payroll Recipient Lock Status Reader
+
+Expose whether a payout recipient is locked because of an active payroll execution (`#512`). This strengthens operational workflows by preventing duplicate payouts, race conditions, and double-settlement during in-flight batch execution while keeping private salary and employee data protected.
+
+- **Privacy Guaranteed**: Private compensation and salary figures are never part of lock evaluations or messages. Recipient addresses and internal payroll identifiers are automatically masked (`GA2C...6E67`, `pay...-01`) for safe logging and UI display.
+- **Contract & Offline Evaluation**: Query live on-chain lock status via `fetchRecipientLockStatus()` / `PayrollService#getRecipientLockStatus()`, or evaluate offline in-flight state via `evaluateRecipientLockStatus()` / `evaluateBatchRecipientLockStatus()`.
+- **UI & Dashboard Safe**: Formatted labels (`formatRecipientLockStatus()`) provide single-line status summaries with status badges (`🔒 LOCKED` / `🔓 UNLOCKED`).
+
+```typescript
+import {
+  fetchRecipientLockStatus,
+  evaluateRecipientLockStatus,
+  evaluateBatchRecipientLockStatus,
+  formatRecipientLockStatus,
+  isRecipientLocked,
+  PayrollService,
+} from "@zk-payroll/core";
+
+// 1. Query on-chain lock status from contract
+const status = await payrollService.getRecipientLockStatus(recipientAddress, employerAddress);
+
+if (status.isLocked) {
+  // Recipient is actively locked in an in-flight payroll run
+  console.log(formatRecipientLockStatus(status));
+  // e.g. "Recipient GA2C...6E67: 🔒 LOCKED (active_payroll_execution in run pay...-01 since 2026-09-29T12:00:00.000Z)"
+} else {
+  console.log("Safe to proceed with payout:", status.canReceivePayout);
+}
+
+// 2. Pure offline evaluation across active in-flight executions
+const activeExecutions = [
+  {
+    payrollId: "batch-run-2024-09",
+    status: "executing",
+    recipients: ["GA2C5RFPE6GCKMY3Z4DC6NOURMDRYZ3UMDVQ4N5ACFBPQ4E3Y3376E67"],
+    lockedAt: Date.now() - 10 * 60 * 1000,
+  },
+];
+
+const evalStatus = evaluateRecipientLockStatus(recipientAddress, activeExecutions, {
+  lockTimeoutMs: 60 * 60 * 1000, // 1 hour timeout
+});
+
+// 3. Batch evaluation for pre-flight payroll checks
+const batchSummary = evaluateBatchRecipientLockStatus(
+  ["GA2C...6E67", "GBBD...7WHF"],
+  activeExecutions
+);
+console.log(`Checked ${batchSummary.totalChecked} recipients: ${batchSummary.lockedCount} locked.`);
+```
+
 ## Event Stream Deduplication
 
 The SDK provides deduplication helpers to prevent processing the same payroll event more than once. This strengthens payroll workflows while keeping private salary and employee data protected.
