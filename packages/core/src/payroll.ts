@@ -61,6 +61,69 @@ import {
   type DestinationWorkflowValidation,
 } from "./settlement/destination";
 import type { DestinationValidationHook } from "./employees/payoutDestination";
+<<<<<<< Updated upstream
+=======
+import {
+  fetchRecipientLockStatus as fetchRecipientLockStatusHelper,
+  evaluateRecipientLockStatus as evaluateRecipientLockStatusHelper,
+  evaluateBatchRecipientLockStatus as evaluateBatchRecipientLockStatusHelper,
+  formatRecipientLockStatus as formatRecipientLockStatusHelper,
+  isRecipientLocked as isRecipientLockedHelper,
+  canRecipientReceivePayout as canRecipientReceivePayoutHelper,
+  type RecipientLockStatus,
+  type RecipientLockReason,
+  type FetchRecipientLockStatusOptions,
+  type RecipientLockReadOptions,
+  type ActivePayrollExecution,
+  type BatchRecipientLockSummary,
+} from "./payroll/recipientLockStatus";
+import {
+  inspectDraftLock as inspectDraftLockHelper,
+  assertDraftLockable as assertDraftLockableHelper,
+  isDraftLockable as isDraftLockableHelper,
+  formatDraftLockInspectionSummary as formatDraftLockInspectionSummaryHelper,
+  createMockDraftLockInspectionResult as createMockDraftLockInspectionResultHelper,
+  DraftLockError,
+  type DraftLockInspectionResult,
+  type DraftLockInspectionOptions,
+  type DraftLockState,
+  type DraftLockErrorCode,
+  type DraftLockBlocker,
+  type DraftLockWarning,
+  type DraftLockWarningCode,
+} from "./draft/draftLockInspection";
+
+export {
+  fetchRecipientLockStatusHelper as fetchRecipientLockStatus,
+  evaluateRecipientLockStatusHelper as evaluateRecipientLockStatus,
+  evaluateBatchRecipientLockStatusHelper as evaluateBatchRecipientLockStatus,
+  formatRecipientLockStatusHelper as formatRecipientLockStatus,
+  isRecipientLockedHelper as isRecipientLocked,
+  canRecipientReceivePayoutHelper as canRecipientReceivePayout,
+  type RecipientLockStatus,
+  type RecipientLockReason,
+  type FetchRecipientLockStatusOptions,
+  type RecipientLockReadOptions,
+  type ActivePayrollExecution,
+  type BatchRecipientLockSummary,
+};
+>>>>>>> Stashed changes
+
+export {
+  inspectDraftLockHelper as inspectDraftLock,
+  assertDraftLockableHelper as assertDraftLockable,
+  isDraftLockableHelper as isDraftLockable,
+  formatDraftLockInspectionSummaryHelper as formatDraftLockInspectionSummary,
+  createMockDraftLockInspectionResultHelper as createMockDraftLockInspectionResult,
+  DraftLockError,
+  type DraftLockInspectionResult,
+  type DraftLockInspectionOptions,
+  type DraftLockState,
+  type DraftLockErrorCode,
+  type DraftLockBlocker,
+  type DraftLockWarning,
+  type DraftLockWarningCode,
+};
 
 export {
   submitSequentialPayrollBatches,
@@ -624,4 +687,133 @@ export class PayrollService {
   static async validateDestination(value: unknown): Promise<DestinationWorkflowValidation> {
     return validatePaymentDestination(value);
   }
+<<<<<<< Updated upstream
+=======
+
+  /**
+   * Reads the on-chain lock status for a payout recipient (#512).
+   *
+   * Queries the contract to check whether the recipient is currently locked
+   * by an active payroll execution. Returns typed, UI-safe status with
+   * masked recipient identifiers and safe defaults on error.
+   *
+   * @param recipient - Recipient Stellar address or employee identifier
+   * @param employer - Employer/company Stellar address
+   * @param options - Query options (network, requestId, redact)
+   */
+  async getRecipientLockStatus(
+    recipient: string,
+    employer: string,
+    options?: Partial<FetchRecipientLockStatusOptions>
+  ): Promise<RecipientLockStatus> {
+    return fetchRecipientLockStatusHelper(this.contractWrapper, recipient, employer, {
+      signer: this.signer,
+      network: this.network,
+      ...options,
+    });
+  }
+
+  /**
+   * Evaluates whether a recipient is locked across active in-flight payroll executions (#512).
+   *
+   * @param recipient - Recipient identifier
+   * @param activeExecutions - Array of in-flight payroll executions
+   * @param options - Evaluation options
+   */
+  evaluateRecipientLock(
+    recipient: string,
+    activeExecutions: ActivePayrollExecution[],
+    options?: RecipientLockReadOptions
+  ): RecipientLockStatus {
+    return evaluateRecipientLockStatusHelper(recipient, activeExecutions, options);
+  }
+
+  /**
+   * Static helper: Evaluates recipient lock status without a service instance (#512).
+   */
+  static evaluateRecipientLock(
+    recipient: string,
+    activeExecutions: ActivePayrollExecution[],
+    options?: RecipientLockReadOptions
+  ): RecipientLockStatus {
+    return evaluateRecipientLockStatusHelper(recipient, activeExecutions, options);
+  }
+
+  /**
+   * Static helper: Evaluates lock statuses for a batch of recipients (#512).
+   */
+  static evaluateBatchRecipientLock(
+    recipients: string[],
+    activeExecutions: ActivePayrollExecution[],
+    options?: RecipientLockReadOptions
+  ): BatchRecipientLockSummary {
+    return evaluateBatchRecipientLockStatusHelper(recipients, activeExecutions, options);
+  }
+
+  /**
+   * Static helper: Formats a recipient lock status into a single human-readable line (#512).
+   */
+  static formatRecipientLockStatus(status: RecipientLockStatus): string {
+    return formatRecipientLockStatusHelper(status);
+  }
+
+  /**
+   * Static helper: Checks whether a recipient is locked (#512).
+   */
+  static isRecipientLocked(statusOrRecipient: RecipientLockStatus | { isLocked: boolean }): boolean {
+    return isRecipientLockedHelper(statusOrRecipient);
+  }
+
+  /**
+   * Static helper: Checks whether a recipient is clear to receive a payout (#512).
+   */
+  static canRecipientReceivePayout(
+    statusOrRecipient: RecipientLockStatus | { isLocked: boolean; canReceivePayout?: boolean }
+  ): boolean {
+    return canRecipientReceivePayoutHelper(statusOrRecipient);
+  }
+
+  /**
+   * Inspects a payroll draft for lock readiness and operational lock state (#537).
+   *
+   * @param draft - Payroll draft, DraftBuilder, or entry array
+   * @param options - Inspection options
+   */
+  inspectDraftLock(
+    draft: unknown,
+    options?: DraftLockInspectionOptions
+  ): DraftLockInspectionResult {
+    return inspectDraftLockHelper(draft, options);
+  }
+
+  /**
+   * Static helper: Inspects a payroll draft for lock readiness (#537).
+   */
+  static inspectDraftLock(
+    draft: unknown,
+    options?: DraftLockInspectionOptions
+  ): DraftLockInspectionResult {
+    return inspectDraftLockHelper(draft, options);
+  }
+
+  /**
+   * Asserts that a draft is clear to be locked and submitted, throwing DraftLockError if not (#537).
+   */
+  assertDraftLockable(
+    draft: unknown,
+    options?: DraftLockInspectionOptions
+  ): void {
+    assertDraftLockableHelper(draft, options);
+  }
+
+  /**
+   * Static helper: Asserts that a draft is clear to be locked and submitted (#537).
+   */
+  static assertDraftLockable(
+    draft: unknown,
+    options?: DraftLockInspectionOptions
+  ): void {
+    assertDraftLockableHelper(draft, options);
+  }
+>>>>>>> Stashed changes
 }
