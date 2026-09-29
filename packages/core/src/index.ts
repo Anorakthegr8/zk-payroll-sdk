@@ -204,3 +204,6 @@ export * from "./compliance";
 
 // ── Privacy & Safe Credential Handling ─────────────────────────────────────
 export * from "./privacy";
+
+// ── Payroll Recipient Lock Status Reader (#512) ─────────────────────────────
+export * from "./payroll/recipientLockStatus";
