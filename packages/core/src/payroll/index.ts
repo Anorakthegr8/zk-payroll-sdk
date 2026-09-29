@@ -18,4 +18,4 @@ export * from "./payrollPeriodReopenEligibility";
 export * from "./paymentInstructionExpiry";
 export * from "./periodOwnershipReader";
 export * from "./payrollSubmissionSequenceValidator";
-export * from "./recipientLockStatus";
+export * from "./payrollStateConsistencyGuard";
